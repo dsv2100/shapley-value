@@ -1,5 +1,5 @@
 #Shapley standard formula computation from 1951
-shapley_value_standard_formula <- function(i,set){
+shapley_value_standard_formula <- function(i,set,n){
   if (i %in% unlist(strsplit(set, ","))){
     set_aux <- strsplit(set, ",")   # split by comma
     length_set<-length(set_aux[[1]])
@@ -15,8 +15,8 @@ shapley_value_standard_formula <- function(i,set){
 
 
 
-#Shapley formula used by Wilson in 1991
-shapley_value_wilson_findwho_formula <- function(i,set){
+#Shapley formula used by Wilson in 1991 (also appearing in 1951)
+shapley_value_wilson_findwho_formula <- function(i,set,n){
   set_aux <- strsplit(set, ",")   # split by comma
   length_set<-length(set_aux[[1]])
   if (i %in% unlist(strsplit(set, ","))){
@@ -32,6 +32,44 @@ shapley_value_wilson_findwho_formula <- function(i,set){
   }
 }
 
+
+
+gamma <- function(n, s) {
+  term1 <- (factorial(s) / (2^n * factorial(n))) *
+    sum(sapply(0:s, function(k) {
+      factorial(n - k - 1) / (factorial(s - k)) * 2^k
+    }))
+  
+  term2 <- (factorial(n - s - 1) / (2^n * factorial(n))) *
+    sum(sapply(0:(n - s - 1), function(k) {
+      factorial(n - k - 1) / (factorial(n - s - 1 - k)) * 2^k
+    }))
+  
+  return(term1 + term2)
+}
+
+
+
+#Shapley formula computation from Bernardi & Freixas 2018
+shapley_value_formula_bernardi_freixas <- function(i,set,n){
+  if (i %in% unlist(strsplit(set, ","))){
+    set_aux <- strsplit(set, ",")   # split by comma
+    length_set<-length(set_aux[[1]])
+    set_without_i_aux <- set_aux[[1]]
+    set_without_i<-paste(set_without_i_aux[set_without_i_aux != i], collapse = ",")
+    
+    phi_i=(values[[set]]-values[[which(names(values) == set_without_i)]])*gamma(n,length_set-1)
+    #add 1 because our set S includes the player
+    return(phi_i)
+  }
+  else return(0)
+}
+
+
+
+
+
+
 #Shapley value computation with properly format transformations
 shapley_value <- function(values,players){
   
@@ -41,8 +79,9 @@ shapley_value <- function(values,players){
   for (i in strsplit(players, ",")[[1]]) {
     phi_i <- 0
     for (set in names(values)){
-      #phi_i=phi_i+shapley_value_standard_formula(i,set)
-      phi_i=phi_i+shapley_value_wilson_findwho_formula(i,set)
+      #phi_i=phi_i+shapley_value_standard_formula(i,set,n)
+      #phi_i=phi_i+shapley_value_wilson_findwho_formula(i,set,n)
+      phi_i=phi_i+shapley_value_formula_bernardi_freixas(i,set,n)
     }
     phi_values[[i]]=phi_i 
   }
